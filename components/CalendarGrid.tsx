@@ -13,6 +13,7 @@ type Props = {
   onDayPointerDown: (date: string) => void;
   onDayPointerEnter: (date: string) => void;
   onDayPointerUp: (date: string) => void;
+  onDayPointerMove: (clientX: number, clientY: number) => void;
 };
 
 export function CalendarGrid(props: Readonly<Props>) {
@@ -25,6 +26,7 @@ export function CalendarGrid(props: Readonly<Props>) {
     onDayPointerDown,
     onDayPointerEnter,
     onDayPointerUp,
+    onDayPointerMove,
   } = props;
   const days = getMonthGrid(currentMonth);
   const activeRange = dragRange ?? selectedRange;
@@ -47,13 +49,14 @@ export function CalendarGrid(props: Readonly<Props>) {
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-2 touch-none" onPointerMove={(e) => onDayPointerMove(e.clientX, e.clientY)}>
         {days.map((day) => {
           const key = toDateKey(day);
           const inRange = activeRange ? isDateKeyWithinRange(key, activeRange.start, activeRange.end) : false;
           return (
             <DayCell
               key={key}
+              dateKey={key}
               day={day}
               inMonth={inCurrentMonth(day, currentMonth)}
               isSelected={inRange}

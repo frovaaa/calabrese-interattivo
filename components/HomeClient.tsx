@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBoard } from "@/lib/board";
 import { hasSupabaseEnv } from "@/lib/supabase/client";
-import type { PlanningType } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,7 +20,6 @@ function parseBoardId(value: string) {
 
 export function HomeClient() {
   const router = useRouter();
-  const [planningType, setPlanningType] = useState<PlanningType>("generic");
   const [joinInput, setJoinInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +29,7 @@ export function HomeClient() {
     setLoading(true);
     setError(null);
     try {
-      const board = await createBoard(planningType);
+      const board = await createBoard();
       router.push(`/board/${board.id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to create board");
@@ -60,27 +58,12 @@ export function HomeClient() {
         </CardHeader>
         <CardContent className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-4 rounded-3xl border border-zinc-200/70 bg-zinc-50/70 p-5">
-            <div className="space-y-2">
-              <label htmlFor="planning-type" className="text-sm font-medium text-zinc-700">
-                Planning type
-              </label>
-              <select
-                id="planning-type"
-                className="h-11 w-full rounded-2xl border border-zinc-200/80 bg-white/90 px-4 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-zinc-900/20"
-                value={planningType}
-                onChange={(e) => setPlanningType(e.target.value as PlanningType)}
-              >
-                <option value="vacation">Vacation / Trip</option>
-                <option value="dinner">Dinner / Event</option>
-                <option value="study">Study / Work</option>
-                <option value="generic">Generic Planning</option>
-              </select>
-            </div>
-
             <Button onClick={create} disabled={loading || !hasSupabaseEnv} className="w-full">
               {loading ? "Creating board..." : "Create board"}
             </Button>
-            <p className="text-xs text-zinc-500">No account required. You can share the board link after creating it.</p>
+            <p className="text-xs text-zinc-500">
+              No account required. Boards start simple and you can share the link immediately.
+            </p>
           </div>
 
           <div className="space-y-4 rounded-3xl border border-zinc-200/70 bg-white/70 p-5">

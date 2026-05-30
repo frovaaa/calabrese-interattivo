@@ -3,6 +3,7 @@ import type { DaySummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Props = {
+  dateKey: string;
   day: Date;
   inMonth: boolean;
   isSelected?: boolean;
@@ -16,6 +17,7 @@ type Props = {
 
 export function DayCell(props: Readonly<Props>) {
   const {
+    dateKey,
     day,
     inMonth,
     isSelected = false,
@@ -28,11 +30,12 @@ export function DayCell(props: Readonly<Props>) {
   } = props;
   return (
     <button
+      data-date={dateKey}
       onPointerDown={onPointerDown}
       onPointerEnter={onPointerEnter}
       onPointerUp={onPointerUp}
       className={cn(
-        "min-h-20 rounded-lg border p-2 text-left transition select-none hover:bg-zinc-50",
+        "min-h-20 rounded-lg border p-2 text-left transition select-none touch-none hover:bg-zinc-50",
         isSelected ? "border-zinc-900 bg-zinc-900 text-white shadow-sm hover:bg-zinc-800" : "border-zinc-200",
         isRangeStart && "rounded-l-xl",
         isRangeEnd && "rounded-r-xl",

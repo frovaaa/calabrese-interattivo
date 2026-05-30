@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { SyntheticEvent } from "react";
 import { format, isValid, parse } from "date-fns";
 import type { AvailabilityStatus } from "@/lib/types";
@@ -8,12 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type Props = {
-  startDate: string;
-  endDate: string;
-  status: AvailabilityStatus;
-  onStartDateChange: (value: string) => void;
-  onEndDateChange: (value: string) => void;
-  onStatusChange: (value: AvailabilityStatus) => void;
   onApply: (startDate: string, endDate: string, status: AvailabilityStatus) => Promise<void>;
 };
 
@@ -22,22 +16,32 @@ function toIsoDate(value: string) {
   return isValid(parsed) ? format(parsed, "yyyy-MM-dd") : null;
 }
 
+function isCoarsePointerDevice() {
+  if (globalThis.window === undefined) return false;
+  return globalThis.window.matchMedia("(pointer: coarse)").matches;
+}
+
 export function DateRangeSelector(props: Readonly<Props>) {
-  const {
-    startDate,
-    endDate,
-    status,
-    onStartDateChange,
-    onEndDateChange,
-    onStatusChange,
-    onApply,
-  } = props;
+  const { onApply } = props;
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [status, setStatus] = useState<AvailabilityStatus>("available");
+  const [nativePicker, setNativePicker] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const update = () => setNativePicker(isCoarsePointerDevice());
+    update();
+
+    const media = globalThis.window.matchMedia("(pointer: coarse)");
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
 
   const submit = async (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const startIso = toIsoDate(startDate);
-    const endIso = toIsoDate(endDate);
+    const startIso = nativePicker ? startDate : toIsoDate(startDate);
+    const endIso = nativePicker ? endDate : toIsoDate(endDate);
     if (!startIso || !endIso) return;
     setLoading(true);
     try {
@@ -52,25 +56,25 @@ export function DateRangeSelector(props: Readonly<Props>) {
       <p className="mb-3 font-medium">Mark a date range</p>
       <div className="grid gap-2 sm:grid-cols-3">
         <Input
-          type="text"
-          inputMode="numeric"
-          placeholder="DD/MM/YYYY"
+          type={nativePicker ? "date" : "text"}
+          inputMode={nativePicker ? undefined : "numeric"}
+          placeholder={nativePicker ? undefined : "DD/MM/YYYY"}
           value={startDate}
-          onChange={(e) => onStartDateChange(e.target.value)}
+          onChange={(e) => setStartDate(e.target.value)}
           required
         />
         <Input
-          type="text"
-          inputMode="numeric"
-          placeholder="DD/MM/YYYY"
+          type={nativePicker ? "date" : "text"}
+          inputMode={nativePicker ? undefined : "numeric"}
+          placeholder={nativePicker ? undefined : "DD/MM/YYYY"}
           value={endDate}
-          onChange={(e) => onEndDateChange(e.target.value)}
+          onChange={(e) => setEndDate(e.target.value)}
           required
         />
         <select
           className="h-10 rounded-md border border-zinc-300 bg-white px-2 text-sm"
           value={status}
-          onChange={(e) => onStatusChange(e.target.value as AvailabilityStatus)}
+          onChange={(e) => setStatus(e.target.value as AvailabilityStatus)}
         >
           <option value="available">Available</option>
           <option value="maybe">Maybe</option>

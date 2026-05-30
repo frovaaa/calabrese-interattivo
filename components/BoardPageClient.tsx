@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildDailySummary } from "@/lib/availability";
-import { eachDayInRange, formatEuropeanDate } from "@/lib/calendar";
+import { eachDayInRange } from "@/lib/calendar";
 import {
   createParticipant,
   deleteAvailability,
@@ -21,7 +21,6 @@ import type {
   Board,
   Participant,
   ParticipantPreferencesInput,
-  PlanningType,
 } from "@/lib/types";
 import { BoardHeader } from "@/components/BoardHeader";
 import { BestDatesSummary } from "@/components/BestDatesSummary";
@@ -30,18 +29,13 @@ import { DateRangeSelector } from "@/components/DateRangeSelector";
 import { DayDetailsModal } from "@/components/DayDetailsModal";
 import { ParticipantNameForm } from "@/components/ParticipantNameForm";
 import { ParticipantPreferencesForm } from "@/components/ParticipantPreferencesForm";
-import { Button } from "@/components/ui/button";
+import { RangeSelectionModal } from "@/components/RangeSelectionModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const participantStorageKey = (boardId: string) => `planner:participant:${boardId}`;
 const POLLING_INTERVAL_MS = 15000;
 
-const helperTextByType: Record<PlanningType, string> = {
-  vacation: "Share trip constraints, destination ideas, and available ranges.",
-  dinner: "Find the best day everyone can attend and add notes.",
-  study: "Coordinate sessions by marking when you can join.",
-  generic: "Use this flexible board for any collaborative planning.",
-};
+const boardHelperText = "Drag across dates to mark a range, or pick a single day to open its details.";
 
 type Props = Readonly<{ boardId: string }>;
 
@@ -62,10 +56,6 @@ export function BoardPageClient(props: Props) {
   const [selectedRange, setSelectedRange] = useState<DateRange | null>(null);
   const [dragAnchor, setDragAnchor] = useState<string | null>(null);
   const [dragCurrent, setDragCurrent] = useState<string | null>(null);
-  const [rangeStartInput, setRangeStartInput] = useState("");
-  const [rangeEndInput, setRangeEndInput] = useState("");
-  const [rangeStatus, setRangeStatus] = useState<RangeStatus>("available");
-  const [bulkApplying, setBulkApplying] = useState(false);
   const dragFinalizedRef = useRef(false);
   const [month, setMonth] = useState(new Date());
   const [loading, setLoading] = useState(true);
@@ -222,13 +212,12 @@ export function BoardPageClient(props: Props) {
 
       if (nextRange.start === nextRange.end) {
         setSelectedDate(nextRange.start);
+        setSelectedRange(null);
         return;
       }
 
       setSelectedDate(null);
       setSelectedRange(nextRange);
-      setRangeStartInput(formatEuropeanDate(nextRange.start));
-      setRangeEndInput(formatEuropeanDate(nextRange.end));
     },
     [clearDragSelection, dragAnchor, dragCurrent],
   );
@@ -245,6 +234,19 @@ export function BoardPageClient(props: Props) {
     (date: string) => {
       if (!dragAnchor) return;
       setDragCurrent(date);
+    },
+    [dragAnchor],
+  );
+
+  const handleDayPointerMove = useCallback(
+    (clientX: number, clientY: number) => {
+      if (!dragAnchor) return;
+      const target = document.elementFromPoint(clientX, clientY);
+      const dayButton = target instanceof HTMLElement ? target.closest("button[data-date]") : null;
+      const date = dayButton?.dataset.date;
+      if (date) {
+        setDragCurrent(date);
+      }
     },
     [dragAnchor],
   );
@@ -295,16 +297,24 @@ export function BoardPageClient(props: Props) {
     await refreshAll();
   };
 
-  const applySelectedRange = async (status: "available" | "maybe" | "unavailable") => {
-    if (!selectedRange) return;
+  const applySelectedRange = async (status: AvailabilityStatus, note: string) => {
+    if (!selectedRange || !participant) return;
 
-    setBulkApplying(true);
-    try {
-      await applyRange(selectedRange.start, selectedRange.end, status);
-      setSelectedRange(null);
-    } finally {
-      setBulkApplying(false);
-    }
+    const dates = eachDayInRange(selectedRange.start, selectedRange.end);
+    await Promise.all(
+      dates.map((date) =>
+        upsertAvailability({
+          boardId,
+          participantId: participant.id,
+          date,
+          status,
+          note: note.trim() || undefined,
+        }),
+      ),
+    );
+
+    setSelectedRange(null);
+    await refreshAll();
   };
 
   if (!hasSupabaseEnv) {
@@ -322,51 +332,7 @@ export function BoardPageClient(props: Props) {
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       <BoardHeader board={board} onRefresh={refreshAll} />
-      <p className="max-w-2xl text-sm leading-6 text-zinc-600">{helperTextByType[board.planning_type]}</p>
-
-      {selectedRange ? (
-        <Card className="border-zinc-200/70 bg-white/80">
-          <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-medium text-zinc-900">Selected range</p>
-              <p className="text-sm text-zinc-600">
-                {formatEuropeanDate(selectedRange.start)} - {formatEuropeanDate(selectedRange.end)}
-                {" "}
-                ({eachDayInRange(selectedRange.start, selectedRange.end).length} days)
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                onClick={() => void applySelectedRange("available")}
-                disabled={bulkApplying}
-                className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-              >
-                Mark available
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => void applySelectedRange("maybe")}
-                disabled={bulkApplying}
-                className="border-amber-200 text-amber-700 hover:bg-amber-50"
-              >
-                Mark maybe
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => void applySelectedRange("unavailable")}
-                disabled={bulkApplying}
-                className="border-rose-200 text-rose-700 hover:bg-rose-50"
-              >
-                Mark unavailable
-              </Button>
-              <Button variant="ghost" onClick={() => setSelectedRange(null)} disabled={bulkApplying}>
-                Clear selection
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
+      <p className="max-w-2xl text-sm leading-6 text-zinc-600">{boardHelperText}</p>
 
       {participant === null ? (
         <Card className="overflow-hidden">
@@ -381,12 +347,6 @@ export function BoardPageClient(props: Props) {
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.95fr)]">
           <div className="space-y-5">
             <DateRangeSelector
-              startDate={rangeStartInput}
-              endDate={rangeEndInput}
-              status={rangeStatus}
-              onStartDateChange={setRangeStartInput}
-              onEndDateChange={setRangeEndInput}
-              onStatusChange={setRangeStatus}
               onApply={applyRange}
             />
             <CalendarGrid
@@ -398,6 +358,7 @@ export function BoardPageClient(props: Props) {
               onDayPointerDown={handleDayPointerDown}
               onDayPointerEnter={handleDayPointerEnter}
               onDayPointerUp={handleDayPointerUp}
+              onDayPointerMove={handleDayPointerMove}
             />
           </div>
           <div className="space-y-5">
@@ -443,6 +404,15 @@ export function BoardPageClient(props: Props) {
           onClear={clearStatusForDate}
         />
       ) : null}
+
+      <RangeSelectionModal
+        open={!!selectedRange}
+        range={selectedRange}
+        onOpenChange={(open) => {
+          if (!open) setSelectedRange(null);
+        }}
+        onApply={applySelectedRange}
+      />
     </main>
   );
 }

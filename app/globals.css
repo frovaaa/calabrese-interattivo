@@ -5,6 +5,15 @@
   color-scheme: light;
 }
 
+html,
+body {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.9), transparent 38%),
+    radial-gradient(circle at top right, rgba(229, 231, 235, 0.6), transparent 28%),
+    linear-gradient(180deg, #faf8f3 0%, #f4f1ea 100%);
+}
+
 * {
   @apply border-zinc-200;
 }
@@ -14,11 +23,8 @@ html {
 }
 
 body {
+  min-height: 100dvh;
   font-family: "Manrope", sans-serif;
-  background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.9), transparent 38%),
-    radial-gradient(circle at top right, rgba(229, 231, 235, 0.6), transparent 28%),
-    linear-gradient(180deg, #faf8f3 0%, #f4f1ea 100%);
   color: #0f172a;
 }
 

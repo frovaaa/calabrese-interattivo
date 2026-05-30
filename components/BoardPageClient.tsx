@@ -11,7 +11,6 @@ import {
   getParticipant,
   getParticipants,
   updateParticipantName,
-  updateParticipantPreferences,
   upsertAvailability,
 } from "@/lib/board";
 import { getSupabaseClient, hasSupabaseEnv } from "@/lib/supabase/client";
@@ -20,7 +19,6 @@ import type {
   AvailabilityStatus,
   Board,
   Participant,
-  ParticipantPreferencesInput,
 } from "@/lib/types";
 import { BoardHeader } from "@/components/BoardHeader";
 import { BestDatesSummary } from "@/components/BestDatesSummary";
@@ -28,7 +26,6 @@ import { CalendarGrid } from "@/components/CalendarGrid";
 import { DateRangeSelector } from "@/components/DateRangeSelector";
 import { DayDetailsModal } from "@/components/DayDetailsModal";
 import { ParticipantNameForm } from "@/components/ParticipantNameForm";
-import { ParticipantPreferencesForm } from "@/components/ParticipantPreferencesForm";
 import { RangeSelectionModal } from "@/components/RangeSelectionModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -173,20 +170,12 @@ export function BoardPageClient(props: Props) {
     await refreshAll();
   };
 
-  const handlePreferencesSave = async (prefs: ParticipantPreferencesInput) => {
+  const setStatusForDate = async (date: string, status: AvailabilityStatus, note: string) => {
     if (!participant) return;
-    await updateParticipantPreferences(participant.id, prefs);
-    const updated = await getParticipant(participant.id);
-    setParticipant(updated);
-    await refreshAll();
-  };
-
-  const setStatusForDate = async (status: AvailabilityStatus, note: string) => {
-    if (!participant || !selectedDate) return;
     await upsertAvailability({
       boardId,
       participantId: participant.id,
-      date: selectedDate,
+      date,
       status,
       note,
     });
@@ -278,6 +267,7 @@ export function BoardPageClient(props: Props) {
     startDate: string,
     endDate: string,
     status: "available" | "maybe" | "unavailable",
+    note: string,
   ) => {
     if (!participant) return;
 
@@ -289,6 +279,7 @@ export function BoardPageClient(props: Props) {
           participantId: participant.id,
           date,
           status,
+          note: note.trim() || undefined,
         }),
       ),
     );
@@ -326,6 +317,11 @@ export function BoardPageClient(props: Props) {
   if (loading) return <main className="p-6">Loading board...</main>;
   if (error) return <main className="p-6 text-rose-700">Error: {error}</main>;
   if (!board) return <main className="p-6">Board not found.</main>;
+
+  const selectedDateResponse =
+    participant && selectedDate
+      ? availability.find((row) => row.participant_id === participant.id && row.date === selectedDate)
+      : undefined;
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
@@ -367,25 +363,20 @@ export function BoardPageClient(props: Props) {
               <CardContent className="space-y-4">
                 <ParticipantNameForm
                   initialName={participant.name}
+                  saveOnBlur
                   submitLabel="Update name"
                   onSubmit={handleNameUpdate}
                 />
-                <ParticipantPreferencesForm
-                  initialValues={{
-                    constraints: participant.constraints,
-                    general_notes: participant.general_notes,
-                  }}
-                  onSave={handlePreferencesSave}
-                />
               </CardContent>
             </Card>
-            <BestDatesSummary rows={availability} participants={participants} />
+            <BestDatesSummary rows={availability} participants={participants} boardTitle={board.title} />
           </div>
         </div>
       )}
 
       {participant && selectedDate ? (
         <DayDetailsModal
+          key={`${selectedDate}:${selectedDateResponse?.updated_at ?? "new"}`}
           open={!!selectedDate}
           onOpenChange={(open) => {
             if (!open) setSelectedDate(null);

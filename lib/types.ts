@@ -10,8 +10,6 @@ export type Participant = {
   id: string;
   board_id: string;
   name: string;
-  constraints: string | null;
-  general_notes: string | null;
   created_at: string;
 };
 
@@ -39,5 +37,3 @@ export type BestRangeSummary = {
   maybe: number;
   unavailablePeople: string[];
 };
-
-export type ParticipantPreferencesInput = Pick<Participant, "constraints" | "general_notes">;

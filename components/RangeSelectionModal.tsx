@@ -80,7 +80,7 @@ export function RangeSelectionModal(props: Readonly<Props>) {
           <div className="space-y-2">
             <p className="text-sm font-medium text-zinc-900">Optional note</p>
             <Textarea
-              placeholder="Add context or constraints"
+              placeholder="Add a note"
               value={note}
               onChange={(e) => setNote(e.target.value)}
             />

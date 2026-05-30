@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { FocusEvent } from "react";
 import type { Availability, AvailabilityStatus, Participant } from "@/lib/types";
 import { formatFriendlyDate } from "@/lib/calendar";
 import { participantResponsesForDate } from "@/lib/availability";
@@ -15,7 +16,7 @@ type Props = {
   participantId: string;
   participants: Participant[];
   availability: Availability[];
-  onSetStatus: (status: AvailabilityStatus, note: string) => Promise<void>;
+  onSetStatus: (date: string, status: AvailabilityStatus, note: string) => Promise<void>;
   onClear: () => Promise<void>;
 };
 
@@ -32,6 +33,7 @@ export function DayDetailsModal(props: Readonly<Props>) {
   } = props;
   const mine = availability.find((a) => a.participant_id === participantId && a.date === date);
   const [note, setNote] = useState(mine?.note ?? "");
+  const [savingNote, setSavingNote] = useState(false);
 
   const responses = useMemo(
     () => participantResponsesForDate(availability, participants, date),
@@ -57,11 +59,34 @@ export function DayDetailsModal(props: Readonly<Props>) {
   };
 
   const submit = async (status: AvailabilityStatus) => {
-    await onSetStatus(status, note);
+    await onSetStatus(date, status, note);
+  };
+
+  const saveNote = async (showSavingState = true) => {
+    const currentNote = mine?.note ?? "";
+    if (!selectedStatus || note.trim() === currentNote) return;
+
+    if (showSavingState) setSavingNote(true);
+    try {
+      await onSetStatus(date, selectedStatus, note);
+    } finally {
+      if (showSavingState) setSavingNote(false);
+    }
+  };
+
+  const handleNoteBlur = async (e: FocusEvent<HTMLTextAreaElement>) => {
+    const nextTarget = e.relatedTarget;
+    if (nextTarget instanceof HTMLElement && nextTarget.closest("[data-status-action]")) return;
+    await saveNote();
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) void saveNote(false);
+    onOpenChange(nextOpen);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{formatFriendlyDate(date)}</DialogTitle>
@@ -72,16 +97,33 @@ export function DayDetailsModal(props: Readonly<Props>) {
           placeholder="Optional note"
           value={note}
           onChange={(e) => setNote(e.target.value)}
+          onBlur={handleNoteBlur}
           className="mb-3"
         />
+        {savingNote ? <p className="-mt-2 mb-3 text-xs text-zinc-500">Saving note...</p> : null}
         <div className="mb-3 flex flex-wrap gap-2">
-          <Button onClick={() => submit("available")} variant="outline" className={statusButtonClass("available")}>
+          <Button
+            data-status-action
+            onClick={() => submit("available")}
+            variant="outline"
+            className={statusButtonClass("available")}
+          >
             Available
           </Button>
-          <Button onClick={() => submit("maybe")} variant="outline" className={statusButtonClass("maybe")}>
+          <Button
+            data-status-action
+            onClick={() => submit("maybe")}
+            variant="outline"
+            className={statusButtonClass("maybe")}
+          >
             Maybe
           </Button>
-          <Button onClick={() => submit("unavailable")} variant="outline" className={statusButtonClass("unavailable")}>
+          <Button
+            data-status-action
+            onClick={() => submit("unavailable")}
+            variant="outline"
+            className={statusButtonClass("unavailable")}
+          >
             Unavailable
           </Button>
           <Button onClick={onClear} variant="ghost">

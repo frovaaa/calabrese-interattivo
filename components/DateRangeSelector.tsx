@@ -1,78 +1,62 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { SyntheticEvent } from "react";
-import { format, isValid, parse } from "date-fns";
 import type { AvailabilityStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 type Props = {
-  onApply: (startDate: string, endDate: string, status: AvailabilityStatus) => Promise<void>;
+  onApply: (startDate: string, endDate: string, status: AvailabilityStatus, note: string) => Promise<void>;
 };
-
-function toIsoDate(value: string) {
-  const parsed = parse(value, "dd/MM/yyyy", new Date());
-  return isValid(parsed) ? format(parsed, "yyyy-MM-dd") : null;
-}
-
-function isCoarsePointerDevice() {
-  if (globalThis.window === undefined) return false;
-  return globalThis.window.matchMedia("(pointer: coarse)").matches;
-}
 
 export function DateRangeSelector(props: Readonly<Props>) {
   const { onApply } = props;
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [status, setStatus] = useState<AvailabilityStatus>("available");
-  const [nativePicker, setNativePicker] = useState(false);
+  const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const update = () => setNativePicker(isCoarsePointerDevice());
-    update();
-
-    const media = globalThis.window.matchMedia("(pointer: coarse)");
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
 
   const submit = async (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const startIso = nativePicker ? startDate : toIsoDate(startDate);
-    const endIso = nativePicker ? endDate : toIsoDate(endDate);
-    if (!startIso || !endIso) return;
+    if (!startDate || !endDate) return;
     setLoading(true);
     try {
-      await onApply(startIso, endIso, status);
+      await onApply(startDate, endDate, status, note);
+      setNote("");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={submit} className="rounded-xl border border-zinc-200 bg-white p-4">
+    <form lang="en-GB" onSubmit={submit} className="rounded-xl border border-zinc-200 bg-white p-4">
       <p className="mb-3 font-medium">Mark a date range</p>
       <div className="grid gap-2 sm:grid-cols-3">
-        <Input
-          type={nativePicker ? "date" : "text"}
-          inputMode={nativePicker ? undefined : "numeric"}
-          placeholder={nativePicker ? undefined : "DD/MM/YYYY"}
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-          required
-        />
-        <Input
-          type={nativePicker ? "date" : "text"}
-          inputMode={nativePicker ? undefined : "numeric"}
-          placeholder={nativePicker ? undefined : "DD/MM/YYYY"}
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
-          required
-        />
+        <label className="grid gap-1 text-xs font-medium text-zinc-600">
+          Start date <span className="font-normal text-zinc-400">DD/MM/YYYY</span>
+          <Input
+            type="date"
+            lang="en-GB"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            required
+          />
+        </label>
+        <label className="grid gap-1 text-xs font-medium text-zinc-600">
+          End date <span className="font-normal text-zinc-400">DD/MM/YYYY</span>
+          <Input
+            type="date"
+            lang="en-GB"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            required
+          />
+        </label>
         <select
-          className="h-10 rounded-md border border-zinc-300 bg-white px-2 text-sm"
+          className="mt-auto h-11 rounded-2xl border border-zinc-200/80 bg-white/85 px-4 text-sm shadow-sm outline-none backdrop-blur focus-visible:ring-2 focus-visible:ring-zinc-900/20"
           value={status}
           onChange={(e) => setStatus(e.target.value as AvailabilityStatus)}
         >
@@ -81,6 +65,14 @@ export function DateRangeSelector(props: Readonly<Props>) {
           <option value="unavailable">Unavailable</option>
         </select>
       </div>
+      <label className="mt-3 grid gap-1 text-xs font-medium text-zinc-600">
+        Optional note
+        <Textarea
+          placeholder="Add a note"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+        />
+      </label>
       <Button className="mt-3" type="submit" disabled={loading}>
         {loading ? "Applying..." : "Apply to range"}
       </Button>

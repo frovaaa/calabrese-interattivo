@@ -4,7 +4,6 @@ import type {
   AvailabilityStatus,
   Board,
   Participant,
-  ParticipantPreferencesInput,
 } from "@/lib/types";
 
 export async function createBoard() {
@@ -72,19 +71,6 @@ export async function updateParticipantName(participantId: string, name: string)
   const { error } = await supabase
     .from("participants")
     .update({ name: name.trim() })
-    .eq("id", participantId);
-  if (error) throw error;
-}
-
-export async function updateParticipantPreferences(
-  participantId: string,
-  preferences: ParticipantPreferencesInput,
-) {
-  assertSupabaseEnv();
-  const supabase = getSupabaseClient();
-  const { error } = await supabase
-    .from("participants")
-    .update(preferences)
     .eq("id", participantId);
   if (error) throw error;
 }

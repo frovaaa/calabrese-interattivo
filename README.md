@@ -16,7 +16,6 @@ It helps groups quickly decide the best dates for:
 - Monthly calendar with collaborative availability counts per day
 - Per-day modal to set **Available / Maybe / Unavailable** and optional notes
 - Date-range marking for multi-day planning
-- Participant profile fields for general constraints and notes
 - Best-dates summary (single-day ties + simple best 3/5/7-day suggestions)
 - Supabase Realtime updates on the current board page
 - Polling fallback every 15s
@@ -38,7 +37,6 @@ It helps groups quickly decide the best dates for:
 - `components/DayCell.tsx`
 - `components/DayDetailsModal.tsx`
 - `components/ParticipantNameForm.tsx`
-- `components/ParticipantPreferencesForm.tsx`
 - `components/ShareLinkButton.tsx`
 - `components/BestDatesSummary.tsx`
 - `components/DateRangeSelector.tsx`

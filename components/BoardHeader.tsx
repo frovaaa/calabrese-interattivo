@@ -4,7 +4,6 @@ import { useState } from "react";
 import type { Board } from "@/lib/types";
 import { updateBoardTitle } from "@/lib/board";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { ShareLinkButton } from "@/components/ShareLinkButton";
 
 type Props = {
@@ -18,9 +17,16 @@ export function BoardHeader(props: Readonly<Props>) {
   const [saving, setSaving] = useState(false);
 
   const saveTitle = async () => {
+    const nextTitle = title.trim() || "Untitled Plan";
+    if (nextTitle === board.title) {
+      setTitle(board.title);
+      return;
+    }
+
     setSaving(true);
     try {
-      await updateBoardTitle(board.id, title);
+      await updateBoardTitle(board.id, nextTitle);
+      setTitle(nextTitle);
       await onRefresh();
     } finally {
       setSaving(false);
@@ -33,11 +39,16 @@ export function BoardHeader(props: Readonly<Props>) {
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-950">Planning board</h1>
         <ShareLinkButton />
       </div>
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-        <Button onClick={saveTitle} disabled={saving}>
-          {saving ? "Saving..." : "Save"}
-        </Button>
+      <div className="space-y-1">
+        <Input
+          value={title}
+          onBlur={saveTitle}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+          }}
+        />
+        {saving ? <p className="text-xs text-zinc-500">Saving...</p> : null}
       </div>
     </div>
   );

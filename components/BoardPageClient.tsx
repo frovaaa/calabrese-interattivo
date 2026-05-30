@@ -14,7 +14,7 @@ import {
   updateParticipantPreferences,
   upsertAvailability,
 } from "@/lib/board";
-import { hasSupabaseEnv, supabase } from "@/lib/supabase/client";
+import { getSupabaseClient, hasSupabaseEnv } from "@/lib/supabase/client";
 import type { Availability, Board, Participant, ParticipantPreferencesInput, PlanningType } from "@/lib/types";
 import { BoardHeader } from "@/components/BoardHeader";
 import { BestDatesSummary } from "@/components/BestDatesSummary";
@@ -26,6 +26,7 @@ import { ParticipantPreferencesForm } from "@/components/ParticipantPreferencesF
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const participantStorageKey = (boardId: string) => `planner:participant:${boardId}`;
+const POLLING_INTERVAL_MS = 15000;
 
 const helperTextByType: Record<PlanningType, string> = {
   vacation: "Share trip constraints, destination ideas, and available ranges.",
@@ -83,6 +84,22 @@ export function BoardPageClient({ boardId }: Props) {
 
   useEffect(() => {
     if (!hasSupabaseEnv) return;
+    const supabase = getSupabaseClient();
+    let poll: ReturnType<typeof setInterval> | null = null;
+
+    const startPolling = () => {
+      if (poll) return;
+      poll = setInterval(() => {
+        void refreshAll();
+      }, POLLING_INTERVAL_MS);
+    };
+
+    const stopPolling = () => {
+      if (!poll) return;
+      clearInterval(poll);
+      poll = null;
+    };
+
     const channel = supabase
       .channel(`board:${boardId}`)
       .on(
@@ -102,12 +119,21 @@ export function BoardPageClient({ boardId }: Props) {
       )
       .subscribe();
 
-    const poll = setInterval(() => {
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        stopPolling();
+        return;
+      }
+      startPolling();
       void refreshAll();
-    }, 15000);
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    if (!document.hidden) startPolling();
 
     return () => {
-      clearInterval(poll);
+      stopPolling();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       void supabase.removeChannel(channel);
     };
   }, [boardId, refreshAll]);

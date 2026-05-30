@@ -38,6 +38,15 @@ export type DaySummary = {
   unavailable: number;
 };
 
+export type BestRangeSummary = {
+  label: string;
+  start: string;
+  end: string;
+  available: number;
+  maybe: number;
+  unavailablePeople: string[];
+};
+
 export type ParticipantPreferencesInput = Pick<
   Participant,
   | "preferred_destinations"

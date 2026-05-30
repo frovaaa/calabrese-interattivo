@@ -41,7 +41,7 @@ export function BestDatesSummary({ rows, participants }: Props) {
             <div className="text-zinc-600">
               Avg available {r.available} • Avg maybe {r.maybe} • Group size {participants.length}
             </div>
-            <div className="text-zinc-500">Unavailable participants and notes can be reviewed per day in the calendar modal.</div>
+            <p className="text-zinc-500">Unavailable participants and notes can be reviewed per day in the calendar modal.</p>
           </li>
         ))}
       </ul>

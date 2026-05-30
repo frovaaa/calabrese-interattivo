@@ -71,33 +71,45 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  create policy "mvp_public_read_participants" on public.participants for select using (true);
+  create policy "mvp_public_read_participants" on public.participants
+    for select using (exists (select 1 from public.boards b where b.id = board_id));
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  create policy "mvp_public_insert_participants" on public.participants for insert with check (true);
+  create policy "mvp_public_insert_participants" on public.participants
+    for insert with check (exists (select 1 from public.boards b where b.id = board_id));
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  create policy "mvp_public_update_participants" on public.participants for update using (true) with check (true);
+  create policy "mvp_public_update_participants" on public.participants
+    for update
+    using (exists (select 1 from public.boards b where b.id = board_id))
+    with check (exists (select 1 from public.boards b where b.id = board_id));
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  create policy "mvp_public_delete_participants" on public.participants for delete using (true);
+  create policy "mvp_public_delete_participants" on public.participants
+    for delete using (exists (select 1 from public.boards b where b.id = board_id));
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  create policy "mvp_public_read_availability" on public.availability for select using (true);
+  create policy "mvp_public_read_availability" on public.availability
+    for select using (exists (select 1 from public.boards b where b.id = board_id));
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  create policy "mvp_public_insert_availability" on public.availability for insert with check (true);
+  create policy "mvp_public_insert_availability" on public.availability
+    for insert with check (exists (select 1 from public.boards b where b.id = board_id));
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  create policy "mvp_public_update_availability" on public.availability for update using (true) with check (true);
+  create policy "mvp_public_update_availability" on public.availability
+    for update
+    using (exists (select 1 from public.boards b where b.id = board_id))
+    with check (exists (select 1 from public.boards b where b.id = board_id));
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  create policy "mvp_public_delete_availability" on public.availability for delete using (true);
+  create policy "mvp_public_delete_availability" on public.availability
+    for delete using (exists (select 1 from public.boards b where b.id = board_id));
 exception when duplicate_object then null; end $$;

@@ -1,4 +1,4 @@
-import { assertSupabaseEnv, supabase } from "@/lib/supabase/client";
+import { assertSupabaseEnv, getSupabaseClient } from "@/lib/supabase/client";
 import type {
   Availability,
   AvailabilityStatus,
@@ -10,6 +10,7 @@ import type {
 
 export async function createBoard(planningType: PlanningType = "generic") {
   assertSupabaseEnv();
+  const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("boards")
     .insert({ planning_type: planningType })
@@ -22,6 +23,7 @@ export async function createBoard(planningType: PlanningType = "generic") {
 
 export async function getBoard(boardId: string) {
   assertSupabaseEnv();
+  const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("boards")
     .select("*")
@@ -33,6 +35,7 @@ export async function getBoard(boardId: string) {
 
 export async function updateBoardTitle(boardId: string, title: string) {
   assertSupabaseEnv();
+  const supabase = getSupabaseClient();
   const { error } = await supabase
     .from("boards")
     .update({ title: title.trim() || "Untitled Plan" })
@@ -42,6 +45,7 @@ export async function updateBoardTitle(boardId: string, title: string) {
 
 export async function createParticipant(boardId: string, name: string) {
   assertSupabaseEnv();
+  const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("participants")
     .insert({ board_id: boardId, name: name.trim() })
@@ -53,6 +57,7 @@ export async function createParticipant(boardId: string, name: string) {
 
 export async function getParticipant(participantId: string) {
   assertSupabaseEnv();
+  const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("participants")
     .select("*")
@@ -64,6 +69,7 @@ export async function getParticipant(participantId: string) {
 
 export async function updateParticipantName(participantId: string, name: string) {
   assertSupabaseEnv();
+  const supabase = getSupabaseClient();
   const { error } = await supabase
     .from("participants")
     .update({ name: name.trim() })
@@ -76,6 +82,7 @@ export async function updateParticipantPreferences(
   preferences: ParticipantPreferencesInput,
 ) {
   assertSupabaseEnv();
+  const supabase = getSupabaseClient();
   const { error } = await supabase
     .from("participants")
     .update(preferences)
@@ -85,6 +92,7 @@ export async function updateParticipantPreferences(
 
 export async function getParticipants(boardId: string) {
   assertSupabaseEnv();
+  const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("participants")
     .select("*")
@@ -97,6 +105,7 @@ export async function getParticipants(boardId: string) {
 
 export async function getAvailability(boardId: string) {
   assertSupabaseEnv();
+  const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("availability")
     .select("*")
@@ -114,6 +123,7 @@ export async function upsertAvailability(input: {
   note?: string;
 }) {
   assertSupabaseEnv();
+  const supabase = getSupabaseClient();
   const { error } = await supabase.from("availability").upsert(
     {
       board_id: input.boardId,
@@ -131,6 +141,7 @@ export async function upsertAvailability(input: {
 
 export async function deleteAvailability(boardId: string, participantId: string, date: string) {
   assertSupabaseEnv();
+  const supabase = getSupabaseClient();
   const { error } = await supabase
     .from("availability")
     .delete()

@@ -1,5 +1,5 @@
 import { format, parseISO } from "date-fns";
-import type { Availability, DaySummary, Participant } from "@/lib/types";
+import type { Availability, BestRangeSummary, DaySummary, Participant } from "@/lib/types";
 
 export function buildDailySummary(rows: Availability[]) {
   const summary = new Map<string, DaySummary>();
@@ -11,9 +11,9 @@ export function buildDailySummary(rows: Availability[]) {
   return summary;
 }
 
-export function topSingleDays(rows: Availability[]) {
+export function topSingleDays(rows: Availability[]): Array<{ date: string; counts: DaySummary }> {
   const summary = buildDailySummary(rows);
-  if (!summary.size) return [] as Array<{ date: string; counts: DaySummary }>;
+  if (!summary.size) return [];
 
   let max = 0;
   for (const counts of summary.values()) {
@@ -26,26 +26,12 @@ export function topSingleDays(rows: Availability[]) {
     .map(([date, counts]) => ({ date, counts }));
 }
 
-export function bestRanges(rows: Availability[], lengths: number[]) {
-  if (!rows.length) return [] as Array<{
-    label: string;
-    start: string;
-    end: string;
-    available: number;
-    maybe: number;
-    unavailablePeople: string[];
-  }>;
+export function bestRanges(rows: Availability[], lengths: number[]): BestRangeSummary[] {
+  if (!rows.length) return [];
 
   const byDate = buildDailySummary(rows);
   const dates = [...new Set(rows.map((r) => r.date))].sort();
-  const results: Array<{
-    label: string;
-    start: string;
-    end: string;
-    available: number;
-    maybe: number;
-    unavailablePeople: string[];
-  }> = [];
+  const results: BestRangeSummary[] = [];
 
   for (const length of lengths) {
     let best:
@@ -67,6 +53,8 @@ export function bestRanges(rows: Availability[], lengths: number[]) {
         totalAvailable += c.available;
         totalMaybe += c.maybe;
       }
+      // MVP heuristic: "available" is weighted higher than "maybe"
+      // using a 2:1 ratio so confirmed availability outranks tentative responses.
       const score = totalAvailable * 2 + totalMaybe;
       if (!best || score > best.score) {
         best = {

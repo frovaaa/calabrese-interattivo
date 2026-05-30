@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+const MAX_NAME_LENGTH = 80;
+
 type Props = {
   initialName?: string;
   submitLabel: string;
@@ -31,7 +33,7 @@ export function ParticipantNameForm({ initialName = "", submitLabel, onSubmit }:
         placeholder="Your name"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        maxLength={80}
+        maxLength={MAX_NAME_LENGTH}
         required
       />
       <Button type="submit" disabled={!name.trim() || loading}>

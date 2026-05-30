@@ -5,7 +5,7 @@ import { Copy, Printer, ScanSearch } from "lucide-react";
 import type { Availability, Participant } from "@/lib/types";
 import { bestRanges, buildDailySummary, formatDateRange, topSingleDays } from "@/lib/availability";
 import { formatFriendlyDate } from "@/lib/calendar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
 type Props = {
@@ -380,9 +380,9 @@ export function BestDatesSummary(props: Readonly<Props>) {
               <div className="flex flex-wrap items-start justify-between gap-3 pr-8">
                 <div>
                   <DialogTitle>{boardTitle} availability</DialogTitle>
-                  <p className="mt-1 text-sm text-zinc-600">
+                  <DialogDescription className="mt-1">
                     Full view for sharing, printing, or saving as PDF.
-                  </p>
+                  </DialogDescription>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" onClick={copySummary}>

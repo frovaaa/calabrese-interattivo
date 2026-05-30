@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import type { PointerEvent } from "react";
 import type { DaySummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +13,7 @@ type Props = {
   summary?: DaySummary;
   onPointerDown: () => void;
   onPointerEnter: () => void;
-  onPointerUp: () => void;
+  onPointerUp: (clientX: number, clientY: number) => void;
 };
 
 export function DayCell(props: Readonly<Props>) {
@@ -33,7 +34,7 @@ export function DayCell(props: Readonly<Props>) {
       data-date={dateKey}
       onPointerDown={onPointerDown}
       onPointerEnter={onPointerEnter}
-      onPointerUp={onPointerUp}
+      onPointerUp={(e: PointerEvent<HTMLButtonElement>) => onPointerUp(e.clientX, e.clientY)}
       className={cn(
         "min-h-20 rounded-lg border p-2 text-left transition select-none touch-none hover:bg-zinc-50 sm:min-h-24 lg:min-h-28 lg:p-3",
         isSelected ? "border-zinc-900 bg-zinc-900 text-white shadow-sm hover:bg-zinc-800" : "border-zinc-200",

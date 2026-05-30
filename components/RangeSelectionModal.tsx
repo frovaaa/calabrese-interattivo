@@ -4,7 +4,7 @@ import { useState } from "react";
 import { format, parseISO } from "date-fns";
 import type { AvailabilityStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 
 type RangeSelection = {
@@ -17,6 +17,7 @@ type Props = {
   range: RangeSelection | null;
   onOpenChange: (open: boolean) => void;
   onApply: (status: AvailabilityStatus, note: string) => Promise<void>;
+  onClear: () => Promise<void>;
 };
 
 function formatSelectedRange(range: RangeSelection) {
@@ -24,9 +25,10 @@ function formatSelectedRange(range: RangeSelection) {
 }
 
 export function RangeSelectionModal(props: Readonly<Props>) {
-  const { open, range, onOpenChange, onApply } = props;
+  const { open, range, onOpenChange, onApply, onClear } = props;
   const [note, setNote] = useState("");
   const [savingStatus, setSavingStatus] = useState<AvailabilityStatus | null>(null);
+  const [clearing, setClearing] = useState(false);
 
   const apply = async (status: AvailabilityStatus) => {
     if (!range) return;
@@ -40,11 +42,24 @@ export function RangeSelectionModal(props: Readonly<Props>) {
     }
   };
 
+  const clear = async () => {
+    if (!range) return;
+    setClearing(true);
+    try {
+      await onClear();
+      setNote("");
+      onOpenChange(false);
+    } finally {
+      setClearing(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Apply availability to range</DialogTitle>
+          <DialogDescription>Choose a status and optional note for every date in the selected range.</DialogDescription>
         </DialogHeader>
 
         <p className="mb-3 text-sm text-zinc-600">{range ? formatSelectedRange(range) : null}</p>
@@ -55,24 +70,32 @@ export function RangeSelectionModal(props: Readonly<Props>) {
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               <Button
                 onClick={() => void apply("available")}
-                disabled={savingStatus !== null}
+                disabled={savingStatus !== null || clearing}
                 className="bg-emerald-600 text-white hover:bg-emerald-700"
               >
                 Available
               </Button>
               <Button
                 onClick={() => void apply("maybe")}
-                disabled={savingStatus !== null}
+                disabled={savingStatus !== null || clearing}
                 className="bg-amber-500 text-white hover:bg-amber-600"
               >
                 Maybe
               </Button>
               <Button
                 onClick={() => void apply("unavailable")}
-                disabled={savingStatus !== null}
+                disabled={savingStatus !== null || clearing}
                 className="bg-rose-600 text-white hover:bg-rose-700"
               >
                 Unavailable
+              </Button>
+              <Button
+                onClick={() => void clear()}
+                disabled={savingStatus !== null || clearing}
+                variant="ghost"
+                className="sm:col-span-3"
+              >
+                {clearing ? "Clearing..." : "Clear response"}
               </Button>
             </div>
           </div>

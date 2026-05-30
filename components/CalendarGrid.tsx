@@ -12,7 +12,7 @@ type Props = {
   dragRange: { start: string; end: string } | null;
   onDayPointerDown: (date: string) => void;
   onDayPointerEnter: (date: string) => void;
-  onDayPointerUp: (date: string) => void;
+  onDayPointerUp: (clientX: number, clientY: number) => void;
   onDayPointerMove: (clientX: number, clientY: number) => void;
 };
 
@@ -65,7 +65,7 @@ export function CalendarGrid(props: Readonly<Props>) {
               summary={summary.get(key)}
               onPointerDown={() => onDayPointerDown(key)}
               onPointerEnter={() => onDayPointerEnter(key)}
-              onPointerUp={() => onDayPointerUp(key)}
+              onPointerUp={(clientX, clientY) => onDayPointerUp(clientX, clientY)}
             />
           );
         })}

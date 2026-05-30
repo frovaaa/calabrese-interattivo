@@ -1,4 +1,4 @@
-import { format, parseISO } from "date-fns";
+import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
 import type { Availability, BestRangeSummary, DaySummary, Participant } from "@/lib/types";
 
 export function buildDailySummary(rows: Availability[]) {
@@ -15,14 +15,16 @@ export function topSingleDays(rows: Availability[]): Array<{ date: string; count
   const summary = buildDailySummary(rows);
   if (!summary.size) return [];
 
-  let max = 0;
-  for (const counts of summary.values()) {
-    max = Math.max(max, counts.available);
-  }
-
   return [...summary.entries()]
-    .filter(([, counts]) => counts.available === max)
-    .sort(([a], [b]) => a.localeCompare(b))
+    .filter(([, counts]) => counts.unavailable === 0 && counts.available + counts.maybe > 0)
+    .sort(([aDate, aCounts], [bDate, bCounts]) => {
+      const aScore = aCounts.available * 3 + aCounts.maybe;
+      const bScore = bCounts.available * 3 + bCounts.maybe;
+      if (bScore !== aScore) return bScore - aScore;
+      if (bCounts.available !== aCounts.available) return bCounts.available - aCounts.available;
+      if (bCounts.maybe !== aCounts.maybe) return bCounts.maybe - aCounts.maybe;
+      return aDate.localeCompare(bDate);
+    })
     .map(([date, counts]) => ({ date, counts }));
 }
 
@@ -30,10 +32,14 @@ export function bestRanges(rows: Availability[], lengths: number[]): BestRangeSu
   if (!rows.length) return [];
 
   const byDate = buildDailySummary(rows);
-  const dates = [...new Set(rows.map((r) => r.date))].sort();
+  const responseDates = [...new Set(rows.map((r) => r.date))].sort();
+  const firstDate = parseISO(responseDates[0]);
+  const lastDate = parseISO(responseDates[responseDates.length - 1]);
   const results: BestRangeSummary[] = [];
 
   for (const length of lengths) {
+    if (differenceInCalendarDays(lastDate, firstDate) + 1 < length) continue;
+
     let best:
       | {
           score: number;
@@ -44,25 +50,34 @@ export function bestRanges(rows: Availability[], lengths: number[]): BestRangeSu
         }
       | undefined;
 
-    for (let i = 0; i <= dates.length - length; i++) {
-      const slice = dates.slice(i, i + length);
+    for (let offset = 0; offset <= differenceInCalendarDays(lastDate, firstDate) - length + 1; offset++) {
+      const startDate = addDays(firstDate, offset);
+      const endDate = addDays(startDate, length - 1);
       let totalAvailable = 0;
       let totalMaybe = 0;
-      for (const date of slice) {
+      let hasUnavailable = false;
+      let hasMissingPositiveDay = false;
+
+      for (let dayOffset = 0; dayOffset < length; dayOffset++) {
+        const date = format(addDays(startDate, dayOffset), "yyyy-MM-dd");
         const c = byDate.get(date) ?? { available: 0, maybe: 0, unavailable: 0 };
+        if (c.unavailable > 0) hasUnavailable = true;
+        if (c.available + c.maybe === 0) hasMissingPositiveDay = true;
         totalAvailable += c.available;
         totalMaybe += c.maybe;
       }
-      // MVP heuristic: "available" is weighted higher than "maybe"
-      // using a 2:1 ratio so confirmed availability outranks tentative responses.
-      const score = totalAvailable * 2 + totalMaybe;
+
+      if (hasUnavailable || hasMissingPositiveDay) continue;
+
+      // Confirmed availability outranks tentative responses once the range is viable.
+      const score = totalAvailable * 3 + totalMaybe;
       if (!best || score > best.score) {
         best = {
           score,
           available: Math.round(totalAvailable / length),
           maybe: Math.round(totalMaybe / length),
-          start: slice[0],
-          end: slice[slice.length - 1],
+          start: format(startDate, "yyyy-MM-dd"),
+          end: format(endDate, "yyyy-MM-dd"),
         };
       }
     }

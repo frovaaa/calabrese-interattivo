@@ -8,6 +8,7 @@
 html,
 body {
   min-height: 100%;
+  overflow-x: clip;
   background:
     radial-gradient(circle at top left, rgba(255, 255, 255, 0.9), transparent 38%),
     radial-gradient(circle at top right, rgba(229, 231, 235, 0.6), transparent 28%),

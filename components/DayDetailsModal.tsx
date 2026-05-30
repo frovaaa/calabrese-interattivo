@@ -5,7 +5,7 @@ import type { FocusEvent } from "react";
 import type { Availability, AvailabilityStatus, Participant } from "@/lib/types";
 import { formatFriendlyDate } from "@/lib/calendar";
 import { participantResponsesForDate } from "@/lib/availability";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -90,48 +90,57 @@ export function DayDetailsModal(props: Readonly<Props>) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{formatFriendlyDate(date)}</DialogTitle>
+          <DialogDescription>Set your availability, add an optional note, and review everyone&apos;s responses.</DialogDescription>
         </DialogHeader>
 
-        <p className="mb-2 text-sm text-zinc-600">Your current status: {selectedStatus ?? "none"}</p>
-        <Textarea
-          placeholder="Optional note"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          onBlur={handleNoteBlur}
-          className="mb-3"
-        />
-        {savingNote ? <p className="-mt-2 mb-3 text-xs text-zinc-500">Saving note...</p> : null}
-        <div className="mb-3 flex flex-wrap gap-2">
-          <Button
-            data-status-action
-            onClick={() => submit("available")}
-            variant="outline"
-            className={statusButtonClass("available")}
-          >
-            Available
-          </Button>
-          <Button
-            data-status-action
-            onClick={() => submit("maybe")}
-            variant="outline"
-            className={statusButtonClass("maybe")}
-          >
-            Maybe
-          </Button>
-          <Button
-            data-status-action
-            onClick={() => submit("unavailable")}
-            variant="outline"
-            className={statusButtonClass("unavailable")}
-          >
-            Unavailable
-          </Button>
-          <Button onClick={onClear} variant="ghost">
-            Clear response
-          </Button>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-zinc-900">Availability</p>
+            <p className="text-sm text-zinc-600">Current status: {selectedStatus ?? "none"}</p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <Button
+                data-status-action
+                onClick={() => submit("available")}
+                variant="outline"
+                className={statusButtonClass("available")}
+              >
+                Available
+              </Button>
+              <Button
+                data-status-action
+                onClick={() => submit("maybe")}
+                variant="outline"
+                className={statusButtonClass("maybe")}
+              >
+                Maybe
+              </Button>
+              <Button
+                data-status-action
+                onClick={() => submit("unavailable")}
+                variant="outline"
+                className={statusButtonClass("unavailable")}
+              >
+                Unavailable
+              </Button>
+              <Button onClick={onClear} variant="ghost" className="sm:col-span-3">
+                Clear response
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-zinc-900">Optional note</p>
+            <Textarea
+              placeholder="Add a note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              onBlur={handleNoteBlur}
+            />
+            {savingNote ? <p className="text-xs text-zinc-500">Saving note...</p> : null}
+          </div>
         </div>
 
-        <div>
+        <div className="mt-4">
           <p className="mb-2 text-sm font-medium">Responses</p>
           <ul className="max-h-48 space-y-2 overflow-auto text-sm">
             {responses.length ? (

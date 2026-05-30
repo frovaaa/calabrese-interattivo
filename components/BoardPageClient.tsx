@@ -239,10 +239,12 @@ export function BoardPageClient(props: Props) {
   );
 
   const handleDayPointerUp = useCallback(
-    (date: string) => {
+    (clientX: number, clientY: number) => {
       if (!dragAnchor) return;
       if (dragFinalizedRef.current) return;
-      finalizeDragSelection(date);
+      const target = document.elementFromPoint(clientX, clientY);
+      const dayButton = target instanceof HTMLElement ? target.closest<HTMLButtonElement>("button[data-date]") : null;
+      finalizeDragSelection(dayButton?.dataset.date);
     },
     [dragAnchor, finalizeDragSelection],
   );
@@ -299,6 +301,20 @@ export function BoardPageClient(props: Props) {
           status,
           note: note.trim() || undefined,
         }),
+      ),
+    );
+
+    setSelectedRange(null);
+    await refreshAll();
+  };
+
+  const clearSelectedRange = async () => {
+    if (!selectedRange || !participant) return;
+
+    const dates = eachDayInRange(selectedRange.start, selectedRange.end);
+    await Promise.all(
+      dates.map((date) =>
+        deleteAvailability(boardId, participant.id, date),
       ),
     );
 
@@ -397,6 +413,7 @@ export function BoardPageClient(props: Props) {
           if (!open) setSelectedRange(null);
         }}
         onApply={applySelectedRange}
+        onClear={clearSelectedRange}
       />
     </main>
   );

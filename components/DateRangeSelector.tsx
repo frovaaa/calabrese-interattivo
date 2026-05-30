@@ -36,8 +36,8 @@ export function DateRangeSelector(props: Readonly<Props>) {
 
   if (!open) {
     return (
-      <div className="flex justify-end">
-        <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)}>
+      <div className="flex justify-stretch sm:justify-end">
+        <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)} className="w-full sm:w-auto">
           <CalendarRange className="mr-2 h-4 w-4" />
           Mark range manually
         </Button>
@@ -75,7 +75,7 @@ export function DateRangeSelector(props: Readonly<Props>) {
           />
         </label>
         <select
-          className="mt-auto h-11 rounded-2xl border border-zinc-200/80 bg-white/85 px-4 text-sm shadow-sm outline-none backdrop-blur focus-visible:ring-2 focus-visible:ring-zinc-900/20"
+          className="mt-auto h-11 rounded-2xl border border-zinc-200/80 bg-white/85 px-4 text-base shadow-sm outline-none backdrop-blur focus-visible:ring-2 focus-visible:ring-zinc-900/20 sm:text-sm"
           value={status}
           onChange={(e) => setStatus(e.target.value as AvailabilityStatus)}
         >

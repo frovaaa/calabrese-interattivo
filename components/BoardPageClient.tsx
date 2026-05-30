@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { buildDailySummary } from "@/lib/availability";
 import { eachDayInRange } from "@/lib/calendar";
 import {
@@ -10,6 +11,7 @@ import {
   getBoard,
   getParticipant,
   getParticipants,
+  isBoardId,
   updateParticipantName,
   upsertAvailability,
 } from "@/lib/board";
@@ -27,6 +29,7 @@ import { DateRangeSelector } from "@/components/DateRangeSelector";
 import { DayDetailsModal } from "@/components/DayDetailsModal";
 import { ParticipantNameForm } from "@/components/ParticipantNameForm";
 import { RangeSelectionModal } from "@/components/RangeSelectionModal";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const participantStorageKey = (boardId: string) => `planner:participant:${boardId}`;
@@ -63,8 +66,22 @@ export function BoardPageClient(props: Props) {
   }, [dragAnchor, dragCurrent]);
 
   const refreshAll = useCallback(async () => {
-    const [boardData, participantsData, availabilityData] = await Promise.all([
-      getBoard(boardId),
+    if (!isBoardId(boardId)) {
+      setBoard(null);
+      setParticipants([]);
+      setAvailability([]);
+      return null;
+    }
+
+    const boardData = await getBoard(boardId);
+    if (!boardData) {
+      setBoard(null);
+      setParticipants([]);
+      setAvailability([]);
+      return null;
+    }
+
+    const [participantsData, availabilityData] = await Promise.all([
       getParticipants(boardId),
       getAvailability(boardId),
     ]);
@@ -72,13 +89,15 @@ export function BoardPageClient(props: Props) {
     setBoard(boardData);
     setParticipants(participantsData);
     setAvailability(availabilityData);
+    return boardData;
   }, [boardId]);
 
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
-        await refreshAll();
+        const boardData = await refreshAll();
+        if (!boardData) return;
 
         const savedParticipantId = localStorage.getItem(participantStorageKey(boardId));
         if (savedParticipantId) {
@@ -98,7 +117,7 @@ export function BoardPageClient(props: Props) {
   }, [boardId, refreshAll]);
 
   useEffect(() => {
-    if (!hasSupabaseEnv) return;
+    if (!hasSupabaseEnv || !isBoardId(boardId)) return;
     const supabase = getSupabaseClient();
     let poll: ReturnType<typeof setInterval> | null = null;
 
@@ -332,7 +351,25 @@ export function BoardPageClient(props: Props) {
   }
   if (loading) return <main className="p-6">Loading board...</main>;
   if (error) return <main className="p-6 text-rose-700">Error: {error}</main>;
-  if (!board) return <main className="p-6">Board not found.</main>;
+  if (!board) {
+    return (
+      <main className="mx-auto flex min-h-[70dvh] w-full max-w-xl items-center px-4 py-8 sm:px-6 lg:px-8">
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle>Board not found</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm leading-6 text-zinc-600">
+              This board link is invalid, deleted, or does not exist. Check the link or create a new planning board.
+            </p>
+            <Link href="/" className={buttonVariants({ variant: "default" })}>
+              Go to home
+            </Link>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
 
   const selectedDateResponse =
     participant && selectedDate
@@ -341,7 +378,12 @@ export function BoardPageClient(props: Props) {
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-      <BoardHeader board={board} onRefresh={refreshAll} />
+      <BoardHeader
+        board={board}
+        onRefresh={async () => {
+          await refreshAll();
+        }}
+      />
       <p className="max-w-2xl text-sm leading-6 text-zinc-600">{boardHelperText}</p>
 
       {participant === null ? (

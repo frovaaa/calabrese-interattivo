@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { SyntheticEvent } from "react";
 import { useRouter } from "next/navigation";
-import { createBoard } from "@/lib/board";
+import { createBoard, isBoardId } from "@/lib/board";
 import { hasSupabaseEnv } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +43,11 @@ export function HomeClient() {
     e?.preventDefault();
     const boardId = parseBoardId(joinInput);
     if (!boardId) return;
+    if (!isBoardId(boardId)) {
+      setError("That does not look like a valid board link or ID.");
+      return;
+    }
+    setError(null);
     router.push(`/board/${boardId}`);
   };
 

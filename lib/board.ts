@@ -6,6 +6,12 @@ import type {
   Participant,
 } from "@/lib/types";
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function isBoardId(value: string) {
+  return UUID_PATTERN.test(value);
+}
+
 export async function createBoard() {
   assertSupabaseEnv();
   const supabase = getSupabaseClient();
@@ -20,13 +26,15 @@ export async function createBoard() {
 }
 
 export async function getBoard(boardId: string) {
+  if (!isBoardId(boardId)) return null;
+
   assertSupabaseEnv();
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("boards")
     .select("*")
     .eq("id", boardId)
-    .single<Board>();
+    .maybeSingle<Board>();
   if (error) throw error;
   return data;
 }

@@ -25,6 +25,7 @@ export function HomeClient() {
   const [joinInput, setJoinInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const showSupabaseNotice = hasSupabaseEnv === false;
 
   const create = async () => {
     setLoading(true);
@@ -57,8 +58,11 @@ export function HomeClient() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Planning type</label>
+            <label htmlFor="planning-type" className="text-sm font-medium">
+              Planning type
+            </label>
             <select
+              id="planning-type"
               className="h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm"
               value={planningType}
               onChange={(e) => setPlanningType(e.target.value as PlanningType)}
@@ -74,9 +78,12 @@ export function HomeClient() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Join an existing board (ID or link)</label>
+            <label htmlFor="join-board" className="text-sm font-medium">
+              Join an existing board (ID or link)
+            </label>
             <div className="flex flex-col gap-2 sm:flex-row">
               <Input
+                id="join-board"
                 value={joinInput}
                 onChange={(e) => setJoinInput(e.target.value)}
                 placeholder="Paste board ID or full link"
@@ -87,7 +94,7 @@ export function HomeClient() {
             </div>
           </div>
 
-          {!hasSupabaseEnv ? (
+          {showSupabaseNotice ? (
             <p className="text-sm text-rose-700">
               Configure Supabase env vars in <code>.env.local</code> before using the app.
             </p>

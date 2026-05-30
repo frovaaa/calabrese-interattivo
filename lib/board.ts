@@ -97,10 +97,9 @@ export async function getParticipants(boardId: string) {
     .from("participants")
     .select("*")
     .eq("board_id", boardId)
-    .order("created_at", { ascending: true })
-    .returns<Participant[]>();
+    .order("created_at", { ascending: true });
   if (error) throw error;
-  return data;
+  return data as Participant[];
 }
 
 export async function getAvailability(boardId: string) {
@@ -109,10 +108,9 @@ export async function getAvailability(boardId: string) {
   const { data, error } = await supabase
     .from("availability")
     .select("*")
-    .eq("board_id", boardId)
-    .returns<Availability[]>();
+    .eq("board_id", boardId);
   if (error) throw error;
-  return data;
+  return data as Availability[];
 }
 
 export async function upsertAvailability(input: {

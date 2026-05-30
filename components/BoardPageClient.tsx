@@ -35,9 +35,10 @@ const helperTextByType: Record<PlanningType, string> = {
   generic: "Use this flexible board for any collaborative planning.",
 };
 
-type Props = { boardId: string };
+type Props = Readonly<{ boardId: string }>;
 
-export function BoardPageClient({ boardId }: Props) {
+export function BoardPageClient(props: Props) {
+  const { boardId } = props;
   const [board, setBoard] = useState<Board | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [availability, setAvailability] = useState<Availability[]>([]);
@@ -205,7 +206,8 @@ export function BoardPageClient({ boardId }: Props) {
   if (!hasSupabaseEnv) {
     return (
       <main className="p-6 text-rose-700">
-        Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.
+        Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL and either
+        NEXT_PUBLIC_SUPABASE_ANON_KEY or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.
       </main>
     );
   }
@@ -218,7 +220,7 @@ export function BoardPageClient({ boardId }: Props) {
       <BoardHeader board={board} onRefresh={refreshAll} />
       <p className="text-sm text-zinc-600">{helperTextByType[board.planning_type]}</p>
 
-      {!participant ? (
+      {participant === null ? (
         <Card>
           <CardHeader>
             <CardTitle>Join this board</CardTitle>

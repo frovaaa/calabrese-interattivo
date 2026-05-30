@@ -19,16 +19,17 @@ type Props = {
   onClear: () => Promise<void>;
 };
 
-export function DayDetailsModal({
-  open,
-  onOpenChange,
-  date,
-  participantId,
-  participants,
-  availability,
-  onSetStatus,
-  onClear,
-}: Props) {
+export function DayDetailsModal(props: Readonly<Props>) {
+  const {
+    open,
+    onOpenChange,
+    date,
+    participantId,
+    participants,
+    availability,
+    onSetStatus,
+    onClear,
+  } = props;
   const mine = availability.find((a) => a.participant_id === participantId && a.date === date);
   const [note, setNote] = useState(mine?.note ?? "");
 
@@ -36,6 +37,24 @@ export function DayDetailsModal({
     () => participantResponsesForDate(availability, participants, date),
     [availability, participants, date],
   );
+  const selectedStatus = mine?.status;
+
+  const statusButtonClass = (status: AvailabilityStatus) => {
+    const active = selectedStatus === status;
+    if (status === "available") {
+      return active
+        ? "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700"
+        : "border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50";
+    }
+    if (status === "maybe") {
+      return active
+        ? "border-amber-500 bg-amber-500 text-white hover:bg-amber-600"
+        : "border-amber-200 bg-white text-amber-700 hover:bg-amber-50";
+    }
+    return active
+      ? "border-rose-600 bg-rose-600 text-white hover:bg-rose-700"
+      : "border-rose-200 bg-white text-rose-700 hover:bg-rose-50";
+  };
 
   const submit = async (status: AvailabilityStatus) => {
     await onSetStatus(status, note);
@@ -48,7 +67,7 @@ export function DayDetailsModal({
           <DialogTitle>{formatFriendlyDate(date)}</DialogTitle>
         </DialogHeader>
 
-        <p className="mb-2 text-sm text-zinc-600">Your current status: {mine?.status ?? "none"}</p>
+        <p className="mb-2 text-sm text-zinc-600">Your current status: {selectedStatus ?? "none"}</p>
         <Textarea
           placeholder="Optional note"
           value={note}
@@ -56,13 +75,13 @@ export function DayDetailsModal({
           className="mb-3"
         />
         <div className="mb-3 flex flex-wrap gap-2">
-          <Button onClick={() => submit("available")} variant="secondary">
+          <Button onClick={() => submit("available")} variant="outline" className={statusButtonClass("available")}>
             Available
           </Button>
-          <Button onClick={() => submit("maybe")} variant="outline">
+          <Button onClick={() => submit("maybe")} variant="outline" className={statusButtonClass("maybe")}>
             Maybe
           </Button>
-          <Button onClick={() => submit("unavailable")} variant="outline">
+          <Button onClick={() => submit("unavailable")} variant="outline" className={statusButtonClass("unavailable")}>
             Unavailable
           </Button>
           <Button onClick={onClear} variant="ghost">

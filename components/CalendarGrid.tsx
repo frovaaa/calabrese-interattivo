@@ -1,5 +1,5 @@
 import { addMonths, format, subMonths } from "date-fns";
-import { getMonthGrid, inCurrentMonth, toDateKey } from "@/lib/calendar";
+import { getMonthGrid, inCurrentMonth, isDateKeyWithinRange, toDateKey } from "@/lib/calendar";
 import type { DaySummary } from "@/lib/types";
 import { DayCell } from "@/components/DayCell";
 import { Button } from "@/components/ui/button";
@@ -8,11 +8,26 @@ type Props = {
   currentMonth: Date;
   setCurrentMonth: (d: Date) => void;
   summary: Map<string, DaySummary>;
-  onDayClick: (date: string) => void;
+  selectedRange: { start: string; end: string } | null;
+  dragRange: { start: string; end: string } | null;
+  onDayPointerDown: (date: string) => void;
+  onDayPointerEnter: (date: string) => void;
+  onDayPointerUp: (date: string) => void;
 };
 
-export function CalendarGrid({ currentMonth, setCurrentMonth, summary, onDayClick }: Props) {
+export function CalendarGrid(props: Readonly<Props>) {
+  const {
+    currentMonth,
+    setCurrentMonth,
+    summary,
+    selectedRange,
+    dragRange,
+    onDayPointerDown,
+    onDayPointerEnter,
+    onDayPointerUp,
+  } = props;
   const days = getMonthGrid(currentMonth);
+  const activeRange = dragRange ?? selectedRange;
 
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-4">
@@ -35,13 +50,19 @@ export function CalendarGrid({ currentMonth, setCurrentMonth, summary, onDayClic
       <div className="grid grid-cols-7 gap-2">
         {days.map((day) => {
           const key = toDateKey(day);
+          const inRange = activeRange ? isDateKeyWithinRange(key, activeRange.start, activeRange.end) : false;
           return (
             <DayCell
               key={key}
               day={day}
               inMonth={inCurrentMonth(day, currentMonth)}
+              isSelected={inRange}
+              isRangeStart={inRange && key === activeRange?.start}
+              isRangeEnd={inRange && key === activeRange?.end}
               summary={summary.get(key)}
-              onClick={() => onDayClick(key)}
+              onPointerDown={() => onDayPointerDown(key)}
+              onPointerEnter={() => onDayPointerEnter(key)}
+              onPointerUp={() => onDayPointerUp(key)}
             />
           );
         })}

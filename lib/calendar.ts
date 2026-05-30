@@ -37,6 +37,17 @@ export function formatFriendlyDate(date: Date | string) {
   return format(date, "EEE, MMM d, yyyy");
 }
 
+export function formatEuropeanDate(date: Date | string) {
+  if (typeof date === "string") {
+    return format(parseISO(date), "dd/MM/yyyy");
+  }
+  return format(date, "dd/MM/yyyy");
+}
+
+export function isDateKeyWithinRange(dateKey: string, startDate: string, endDate: string) {
+  return dateKey >= startDate && dateKey <= endDate;
+}
+
 export function eachDayInRange(start: string, end: string) {
   const s = parseISO(start);
   const e = parseISO(end);

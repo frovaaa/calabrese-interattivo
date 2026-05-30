@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildDailySummary } from "@/lib/availability";
-import { eachDayInRange } from "@/lib/calendar";
+import { eachDayInRange, formatEuropeanDate } from "@/lib/calendar";
 import {
   createParticipant,
   deleteAvailability,
@@ -15,7 +15,14 @@ import {
   upsertAvailability,
 } from "@/lib/board";
 import { getSupabaseClient, hasSupabaseEnv } from "@/lib/supabase/client";
-import type { Availability, Board, Participant, ParticipantPreferencesInput, PlanningType } from "@/lib/types";
+import type {
+  Availability,
+  AvailabilityStatus,
+  Board,
+  Participant,
+  ParticipantPreferencesInput,
+  PlanningType,
+} from "@/lib/types";
 import { BoardHeader } from "@/components/BoardHeader";
 import { BestDatesSummary } from "@/components/BestDatesSummary";
 import { CalendarGrid } from "@/components/CalendarGrid";
@@ -23,6 +30,7 @@ import { DateRangeSelector } from "@/components/DateRangeSelector";
 import { DayDetailsModal } from "@/components/DayDetailsModal";
 import { ParticipantNameForm } from "@/components/ParticipantNameForm";
 import { ParticipantPreferencesForm } from "@/components/ParticipantPreferencesForm";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const participantStorageKey = (boardId: string) => `planner:participant:${boardId}`;
@@ -37,6 +45,13 @@ const helperTextByType: Record<PlanningType, string> = {
 
 type Props = Readonly<{ boardId: string }>;
 
+type DateRange = {
+  start: string;
+  end: string;
+};
+
+type RangeStatus = AvailabilityStatus;
+
 export function BoardPageClient(props: Props) {
   const { boardId } = props;
   const [board, setBoard] = useState<Board | null>(null);
@@ -44,9 +59,23 @@ export function BoardPageClient(props: Props) {
   const [availability, setAvailability] = useState<Availability[]>([]);
   const [participant, setParticipant] = useState<Participant | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedRange, setSelectedRange] = useState<DateRange | null>(null);
+  const [dragAnchor, setDragAnchor] = useState<string | null>(null);
+  const [dragCurrent, setDragCurrent] = useState<string | null>(null);
+  const [rangeStartInput, setRangeStartInput] = useState("");
+  const [rangeEndInput, setRangeEndInput] = useState("");
+  const [rangeStatus, setRangeStatus] = useState<RangeStatus>("available");
+  const [bulkApplying, setBulkApplying] = useState(false);
+  const dragFinalizedRef = useRef(false);
   const [month, setMonth] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const activeDragRange = useMemo(() => {
+    if (!dragAnchor || !dragCurrent) return null;
+    const [start, end] = [dragAnchor, dragCurrent].sort((left, right) => left.localeCompare(right));
+    return { start, end };
+  }, [dragAnchor, dragCurrent]);
 
   const refreshAll = useCallback(async () => {
     const [boardData, participantsData, availabilityData] = await Promise.all([
@@ -164,7 +193,7 @@ export function BoardPageClient(props: Props) {
     await refreshAll();
   };
 
-  const setStatusForDate = async (status: "available" | "maybe" | "unavailable", note: string) => {
+  const setStatusForDate = async (status: AvailabilityStatus, note: string) => {
     if (!participant || !selectedDate) return;
     await upsertAvailability({
       boardId,
@@ -175,6 +204,69 @@ export function BoardPageClient(props: Props) {
     });
     await refreshAll();
   };
+
+  const clearDragSelection = useCallback(() => {
+    setDragAnchor(null);
+    setDragCurrent(null);
+  }, []);
+
+  const finalizeDragSelection = useCallback(
+    (endDate?: string) => {
+      if (!dragAnchor) return;
+      const current = endDate ?? dragCurrent ?? dragAnchor;
+      const [start, end] = [dragAnchor, current].sort((left, right) => left.localeCompare(right));
+      const nextRange = { start, end };
+
+      dragFinalizedRef.current = true;
+      clearDragSelection();
+
+      if (nextRange.start === nextRange.end) {
+        setSelectedDate(nextRange.start);
+        return;
+      }
+
+      setSelectedDate(null);
+      setSelectedRange(nextRange);
+      setRangeStartInput(formatEuropeanDate(nextRange.start));
+      setRangeEndInput(formatEuropeanDate(nextRange.end));
+    },
+    [clearDragSelection, dragAnchor, dragCurrent],
+  );
+
+  const handleDayPointerDown = useCallback((date: string) => {
+    dragFinalizedRef.current = false;
+    setSelectedRange(null);
+    setSelectedDate(null);
+    setDragAnchor(date);
+    setDragCurrent(date);
+  }, []);
+
+  const handleDayPointerEnter = useCallback(
+    (date: string) => {
+      if (!dragAnchor) return;
+      setDragCurrent(date);
+    },
+    [dragAnchor],
+  );
+
+  const handleDayPointerUp = useCallback(
+    (date: string) => {
+      if (!dragAnchor) return;
+      if (dragFinalizedRef.current) return;
+      finalizeDragSelection(date);
+    },
+    [dragAnchor, finalizeDragSelection],
+  );
+
+  useEffect(() => {
+    const handleWindowPointerUp = () => {
+      if (!dragAnchor || dragFinalizedRef.current) return;
+      finalizeDragSelection();
+    };
+
+    globalThis.addEventListener("pointerup", handleWindowPointerUp);
+    return () => globalThis.removeEventListener("pointerup", handleWindowPointerUp);
+  }, [dragAnchor, finalizeDragSelection]);
 
   const clearStatusForDate = async () => {
     if (!participant || !selectedDate) return;
@@ -203,6 +295,18 @@ export function BoardPageClient(props: Props) {
     await refreshAll();
   };
 
+  const applySelectedRange = async (status: "available" | "maybe" | "unavailable") => {
+    if (!selectedRange) return;
+
+    setBulkApplying(true);
+    try {
+      await applyRange(selectedRange.start, selectedRange.end, status);
+      setSelectedRange(null);
+    } finally {
+      setBulkApplying(false);
+    }
+  };
+
   if (!hasSupabaseEnv) {
     return (
       <main className="p-6 text-rose-700">
@@ -220,6 +324,50 @@ export function BoardPageClient(props: Props) {
       <BoardHeader board={board} onRefresh={refreshAll} />
       <p className="text-sm text-zinc-600">{helperTextByType[board.planning_type]}</p>
 
+      {selectedRange ? (
+        <Card className="border-zinc-300 bg-zinc-50/80">
+          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-medium">Selected range</p>
+              <p className="text-sm text-zinc-600">
+                {formatEuropeanDate(selectedRange.start)} - {formatEuropeanDate(selectedRange.end)}
+                {" "}
+                ({eachDayInRange(selectedRange.start, selectedRange.end).length} days)
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                onClick={() => void applySelectedRange("available")}
+                disabled={bulkApplying}
+                className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+              >
+                Mark available
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => void applySelectedRange("maybe")}
+                disabled={bulkApplying}
+                className="border-amber-200 text-amber-700 hover:bg-amber-50"
+              >
+                Mark maybe
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => void applySelectedRange("unavailable")}
+                disabled={bulkApplying}
+                className="border-rose-200 text-rose-700 hover:bg-rose-50"
+              >
+                Mark unavailable
+              </Button>
+              <Button variant="ghost" onClick={() => setSelectedRange(null)} disabled={bulkApplying}>
+                Clear selection
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
       {participant === null ? (
         <Card>
           <CardHeader>
@@ -232,12 +380,24 @@ export function BoardPageClient(props: Props) {
       ) : (
         <div className="grid gap-4 lg:grid-cols-3">
           <div className="space-y-4 lg:col-span-2">
-            <DateRangeSelector onApply={applyRange} />
+            <DateRangeSelector
+              startDate={rangeStartInput}
+              endDate={rangeEndInput}
+              status={rangeStatus}
+              onStartDateChange={setRangeStartInput}
+              onEndDateChange={setRangeEndInput}
+              onStatusChange={setRangeStatus}
+              onApply={applyRange}
+            />
             <CalendarGrid
               currentMonth={month}
               setCurrentMonth={setMonth}
               summary={summary}
-              onDayClick={setSelectedDate}
+              selectedRange={selectedRange}
+              dragRange={activeDragRange}
+              onDayPointerDown={handleDayPointerDown}
+              onDayPointerEnter={handleDayPointerEnter}
+              onDayPointerUp={handleDayPointerUp}
             />
           </div>
           <div className="space-y-4">

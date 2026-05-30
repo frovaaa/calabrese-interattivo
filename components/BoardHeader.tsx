@@ -19,7 +19,8 @@ type Props = {
   onRefresh: () => Promise<void>;
 };
 
-export function BoardHeader({ board, onRefresh }: Props) {
+export function BoardHeader(props: Readonly<Props>) {
+  const { board, onRefresh } = props;
   const [title, setTitle] = useState(board.title);
   const [saving, setSaving] = useState(false);
 
@@ -34,18 +35,22 @@ export function BoardHeader({ board, onRefresh }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">Planning board</h1>
+    <div className="flex flex-col gap-4 rounded-3xl border border-white/70 bg-white/85 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)] backdrop-blur sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-2">
+          <div className="inline-flex w-fit items-center rounded-full border border-zinc-200/70 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-500">
+            {planningTypeLabel[board.planning_type]}
+          </div>
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-950">Planning board</h1>
+        </div>
         <ShareLinkButton />
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <Input value={title} onChange={(e) => setTitle(e.target.value)} />
         <Button onClick={saveTitle} disabled={saving}>
           {saving ? "Saving..." : "Save"}
         </Button>
       </div>
-      <p className="text-sm text-zinc-600">Type: {planningTypeLabel[board.planning_type]}</p>
     </div>
   );
 }

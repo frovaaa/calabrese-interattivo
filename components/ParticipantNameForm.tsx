@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { SyntheticEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -12,11 +13,12 @@ type Props = {
   onSubmit: (name: string) => Promise<void>;
 };
 
-export function ParticipantNameForm({ initialName = "", submitLabel, onSubmit }: Props) {
+export function ParticipantNameForm(props: Readonly<Props>) {
+  const { initialName = "", submitLabel, onSubmit } = props;
   const [name, setName] = useState(initialName);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!name.trim()) return;
     setLoading(true);
@@ -36,7 +38,7 @@ export function ParticipantNameForm({ initialName = "", submitLabel, onSubmit }:
         maxLength={MAX_NAME_LENGTH}
         required
       />
-      <Button type="submit" disabled={!name.trim() || loading}>
+      <Button type="submit" disabled={!name.trim() || loading} className="w-full">
         {loading ? "Saving..." : submitLabel}
       </Button>
     </form>

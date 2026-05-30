@@ -1,9 +1,28 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
+
+:root {
+  color-scheme: light;
+}
 
 * {
   @apply border-zinc-200;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Manrope", sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.9), transparent 38%),
+    radial-gradient(circle at top right, rgba(229, 231, 235, 0.6), transparent 28%),
+    linear-gradient(180deg, #faf8f3 0%, #f4f1ea 100%);
+  color: #0f172a;
+}
+
+::selection {
+  background: rgba(24, 24, 27, 0.9);
+  color: white;
 }

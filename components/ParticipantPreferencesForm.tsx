@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { SyntheticEvent } from "react";
 import type { ParticipantPreferencesInput } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,7 +12,8 @@ type Props = {
   onSave: (values: ParticipantPreferencesInput) => Promise<void>;
 };
 
-export function ParticipantPreferencesForm({ initialValues, onSave }: Props) {
+export function ParticipantPreferencesForm(props: Readonly<Props>) {
+  const { initialValues, onSave } = props;
   const [values, setValues] = useState(initialValues);
   const [saving, setSaving] = useState(false);
 
@@ -19,7 +21,7 @@ export function ParticipantPreferencesForm({ initialValues, onSave }: Props) {
     setValues((prev) => ({ ...prev, [key]: value || null }));
   };
 
-  const submit = async (e: React.FormEvent) => {
+  const submit = async (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSaving(true);
     try {
@@ -61,7 +63,7 @@ export function ParticipantPreferencesForm({ initialValues, onSave }: Props) {
         value={values.general_notes ?? ""}
         onChange={(e) => update("general_notes", e.target.value)}
       />
-      <Button type="submit" disabled={saving}>
+      <Button type="submit" disabled={saving} className="w-full">
         {saving ? "Saving..." : "Save preferences"}
       </Button>
     </form>

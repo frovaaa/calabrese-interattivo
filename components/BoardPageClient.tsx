@@ -320,15 +320,15 @@ export function BoardPageClient(props: Props) {
   if (!board) return <main className="p-6">Board not found.</main>;
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 pb-10 sm:p-6">
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       <BoardHeader board={board} onRefresh={refreshAll} />
-      <p className="text-sm text-zinc-600">{helperTextByType[board.planning_type]}</p>
+      <p className="max-w-2xl text-sm leading-6 text-zinc-600">{helperTextByType[board.planning_type]}</p>
 
       {selectedRange ? (
-        <Card className="border-zinc-300 bg-zinc-50/80">
-          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <Card className="border-zinc-200/70 bg-white/80">
+          <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="font-medium">Selected range</p>
+              <p className="text-sm font-medium text-zinc-900">Selected range</p>
               <p className="text-sm text-zinc-600">
                 {formatEuropeanDate(selectedRange.start)} - {formatEuropeanDate(selectedRange.end)}
                 {" "}
@@ -369,7 +369,7 @@ export function BoardPageClient(props: Props) {
       ) : null}
 
       {participant === null ? (
-        <Card>
+        <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle>Join this board</CardTitle>
           </CardHeader>
@@ -378,8 +378,8 @@ export function BoardPageClient(props: Props) {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-3">
-          <div className="space-y-4 lg:col-span-2">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.95fr)]">
+          <div className="space-y-5">
             <DateRangeSelector
               startDate={rangeStartInput}
               endDate={rangeEndInput}
@@ -400,8 +400,8 @@ export function BoardPageClient(props: Props) {
               onDayPointerUp={handleDayPointerUp}
             />
           </div>
-          <div className="space-y-4">
-            <Card>
+          <div className="space-y-5">
+            <Card className="overflow-hidden">
               <CardHeader>
                 <CardTitle>Your profile</CardTitle>
               </CardHeader>

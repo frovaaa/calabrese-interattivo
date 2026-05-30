@@ -5,15 +5,14 @@ import type {
   Board,
   Participant,
   ParticipantPreferencesInput,
-  PlanningType,
 } from "@/lib/types";
 
-export async function createBoard(planningType: PlanningType = "generic") {
+export async function createBoard() {
   assertSupabaseEnv();
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("boards")
-    .insert({ planning_type: planningType })
+    .insert({})
     .select("*")
     .single<Board>();
 

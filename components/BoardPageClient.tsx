@@ -44,8 +44,6 @@ type DateRange = {
   end: string;
 };
 
-type RangeStatus = AvailabilityStatus;
-
 export function BoardPageClient(props: Props) {
   const { boardId } = props;
   const [board, setBoard] = useState<Board | null>(null);
@@ -374,11 +372,7 @@ export function BoardPageClient(props: Props) {
                 />
                 <ParticipantPreferencesForm
                   initialValues={{
-                    preferred_destinations: participant.preferred_destinations,
-                    max_budget: participant.max_budget,
-                    preferred_duration: participant.preferred_duration,
-                    transport_preferences: participant.transport_preferences,
-                    accommodation_preferences: participant.accommodation_preferences,
+                    constraints: participant.constraints,
                     general_notes: participant.general_notes,
                   }}
                   onSave={handlePreferencesSave}

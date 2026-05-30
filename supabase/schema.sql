@@ -4,7 +4,6 @@ create extension if not exists pgcrypto;
 create table if not exists public.boards (
   id uuid primary key default gen_random_uuid(),
   title text not null default 'Untitled Plan',
-  planning_type text not null default 'generic',
   created_at timestamptz not null default now()
 );
 
@@ -12,11 +11,7 @@ create table if not exists public.participants (
   id uuid primary key default gen_random_uuid(),
   board_id uuid not null references public.boards(id) on delete cascade,
   name text not null,
-  preferred_destinations text,
-  max_budget text,
-  preferred_duration text,
-  transport_preferences text,
-  accommodation_preferences text,
+  constraints text,
   general_notes text,
   created_at timestamptz not null default now()
 );

@@ -1,11 +1,8 @@
-export type PlanningType = "vacation" | "dinner" | "study" | "generic";
-
 export type AvailabilityStatus = "available" | "maybe" | "unavailable";
 
 export type Board = {
   id: string;
   title: string;
-  planning_type: PlanningType;
   created_at: string;
 };
 
@@ -13,11 +10,7 @@ export type Participant = {
   id: string;
   board_id: string;
   name: string;
-  preferred_destinations: string | null;
-  max_budget: string | null;
-  preferred_duration: string | null;
-  transport_preferences: string | null;
-  accommodation_preferences: string | null;
+  constraints: string | null;
   general_notes: string | null;
   created_at: string;
 };
@@ -47,12 +40,4 @@ export type BestRangeSummary = {
   unavailablePeople: string[];
 };
 
-export type ParticipantPreferencesInput = Pick<
-  Participant,
-  | "preferred_destinations"
-  | "max_budget"
-  | "preferred_duration"
-  | "transport_preferences"
-  | "accommodation_preferences"
-  | "general_notes"
->;
+export type ParticipantPreferencesInput = Pick<Participant, "constraints" | "general_notes">;

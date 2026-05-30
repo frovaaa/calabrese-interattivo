@@ -242,7 +242,7 @@ export function BoardPageClient(props: Props) {
     (clientX: number, clientY: number) => {
       if (!dragAnchor) return;
       const target = document.elementFromPoint(clientX, clientY);
-      const dayButton = target instanceof HTMLElement ? target.closest("button[data-date]") : null;
+      const dayButton = target instanceof HTMLElement ? target.closest<HTMLButtonElement>("button[data-date]") : null;
       const date = dayButton?.dataset.date;
       if (date) {
         setDragCurrent(date);

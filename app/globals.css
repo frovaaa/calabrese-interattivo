@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+* {
+  @apply border-zinc-200;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}

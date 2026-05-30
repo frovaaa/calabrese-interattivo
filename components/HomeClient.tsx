@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { SyntheticEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createBoard } from "@/lib/board";
 import { hasSupabaseEnv } from "@/lib/supabase/client";
@@ -38,7 +39,8 @@ export function HomeClient() {
     }
   };
 
-  const join = () => {
+  const join = (e?: SyntheticEvent<HTMLFormElement>) => {
+    e?.preventDefault();
     const boardId = parseBoardId(joinInput);
     if (!boardId) return;
     router.push(`/board/${boardId}`);
@@ -66,7 +68,7 @@ export function HomeClient() {
             </p>
           </div>
 
-          <div className="space-y-4 rounded-3xl border border-zinc-200/70 bg-white/70 p-5">
+          <form onSubmit={join} className="space-y-4 rounded-3xl border border-zinc-200/70 bg-white/70 p-5">
             <div className="space-y-2">
               <label htmlFor="join-board" className="text-sm font-medium text-zinc-700">
                 Join a board
@@ -78,11 +80,11 @@ export function HomeClient() {
                 placeholder="Paste board ID or full link"
               />
             </div>
-            <Button variant="outline" onClick={join} disabled={!hasSupabaseEnv} className="w-full">
+            <Button type="submit" variant="outline" disabled={!hasSupabaseEnv} className="w-full">
               Join board
             </Button>
             <p className="text-xs text-zinc-500">If you already have a link, paste it here and jump straight in.</p>
-          </div>
+          </form>
 
           {showSupabaseNotice ? (
             <p className="lg:col-span-2 text-sm text-rose-700">

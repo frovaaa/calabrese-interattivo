@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { SyntheticEvent } from "react";
+import { CalendarRange, X } from "lucide-react";
 import type { AvailabilityStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ export function DateRangeSelector(props: Readonly<Props>) {
   const [endDate, setEndDate] = useState("");
   const [status, setStatus] = useState<AvailabilityStatus>("available");
   const [note, setNote] = useState("");
+  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const submit = async (e: SyntheticEvent<HTMLFormElement>) => {
@@ -26,14 +28,31 @@ export function DateRangeSelector(props: Readonly<Props>) {
     try {
       await onApply(startDate, endDate, status, note);
       setNote("");
+      setOpen(false);
     } finally {
       setLoading(false);
     }
   };
 
+  if (!open) {
+    return (
+      <div className="flex justify-end">
+        <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)}>
+          <CalendarRange className="mr-2 h-4 w-4" />
+          Mark range manually
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <form lang="en-GB" onSubmit={submit} className="rounded-xl border border-zinc-200 bg-white p-4">
-      <p className="mb-3 font-medium">Mark a date range</p>
+    <form lang="en-GB" onSubmit={submit} className="rounded-2xl border border-zinc-200/80 bg-white/90 p-4 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="font-medium">Mark a date range</p>
+        <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)} aria-label="Close manual range">
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
       <div className="grid gap-2 sm:grid-cols-3">
         <label className="grid gap-1 text-xs font-medium text-zinc-600">
           Start date <span className="font-normal text-zinc-400">DD/MM/YYYY</span>

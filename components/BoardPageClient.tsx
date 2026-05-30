@@ -324,7 +324,7 @@ export function BoardPageClient(props: Props) {
       : undefined;
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       <BoardHeader board={board} onRefresh={refreshAll} />
       <p className="max-w-2xl text-sm leading-6 text-zinc-600">{boardHelperText}</p>
 
@@ -338,11 +338,8 @@ export function BoardPageClient(props: Props) {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.95fr)]">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div className="space-y-5">
-            <DateRangeSelector
-              onApply={applyRange}
-            />
             <CalendarGrid
               currentMonth={month}
               setCurrentMonth={setMonth}
@@ -354,8 +351,11 @@ export function BoardPageClient(props: Props) {
               onDayPointerUp={handleDayPointerUp}
               onDayPointerMove={handleDayPointerMove}
             />
+            <DateRangeSelector
+              onApply={applyRange}
+            />
           </div>
-          <div className="space-y-5">
+          <div className="space-y-5 xl:sticky xl:top-6 xl:self-start">
             <Card className="overflow-hidden">
               <CardHeader>
                 <CardTitle>Your profile</CardTitle>
